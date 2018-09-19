@@ -4,6 +4,8 @@ const path = require('path')
 const Sentiment = require('sentiment')
 const products = require('./dump.json')
 
+const RESULTS_DIR = 'results'
+
 const tool = new Sentiment()
 
 for (const product of products) {
@@ -37,17 +39,13 @@ for (const product of products) {
 
 const orderedProducts = products.sort((a, b) => a.sentiment > b.sentiment ? -1 : a.sentiment < b.sentiment ? 1 : 0)
 
-const RESULTS_DIR = 'results'
+const dataToSnapshot = orderedProducts.reduce((snapshot, product, index) => `${snapshot}\n${index}. ${product.brand} - ${product.sentiment}`, '')
 
 if (fs.existsSync(path.resolve(__dirname, RESULTS_DIR))) {
-  fs.writeFileSync(path.resolve(__dirname, RESULTS_DIR, `${Date.now()}_results.json`), JSON.stringify(orderedProducts, null, 2), { encoding: 'utf-8' })
+  fs.writeFileSync(path.resolve(__dirname, RESULTS_DIR, `${Date.now()}_results.txt`), `${JSON.stringify(orderedProducts, null, 2)}${dataToSnapshot}`, { encoding: 'utf-8' })
 } else {
   fs.mkdir(path.resolve(__dirname, RESULTS_DIR), err => {
     if (err) return console.log(err)
-    fs.writeFileSync(path.resolve(__dirname, RESULTS_DIR, `${Date.now()}_results.json`), JSON.stringify(orderedProducts, null, 2), { encoding: 'utf-8' })
+    fs.writeFileSync(path.resolve(__dirname, RESULTS_DIR, `${Date.now()}_results.txt`), `${JSON.stringify(orderedProducts, null, 2)}${dataToSnapshot}`, { encoding: 'utf-8' })
   })
 }
-
-orderedProducts.forEach((product, index) => {
-  console.log(`${index + 1}. ${product.brand} - ${product.sentiment}`)
-})
