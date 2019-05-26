@@ -5,26 +5,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-        "name": "Current TS File",
-        "type": "node",
-        "request": "launch",
-        "args": ["${relativeFile}"],
-        "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-        "sourceMaps": true,
-        "cwd": "${workspaceRoot}",
-        "protocol": "inspector",
-    },
-    {
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
-      "runtimeArgs": [
-          "-r",
-          "ts-node/register"
-      ],
-      "args": [
-          "${workspaceFolder}/index.ts"
-      ]
-  }
+      "name": "Debug",
+      "program": "${workspaceFolder}/src/index.js",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/babel-node",
+      "runtimeArgs": ["--nolazy"]
+    },
   ]
 }
