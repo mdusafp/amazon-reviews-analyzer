@@ -1,4 +1,4 @@
-import { flow } from 'lodash';
+import lodash from 'lodash';
 import { PorterStemmer, WordTokenizer, LancasterStemmer } from 'natural';
 
 import stopwords from './stopwords.json';
@@ -73,7 +73,7 @@ class Preprocessor {
    * @param {String} text - input text
    */
   preprocess(text) {
-    const preprocess = flow([
+    const preprocess = lodash.flow([
       this.removeNumbers.bind(this),
       this.toLowerCase.bind(this),
       this.tokenize.bind(this),

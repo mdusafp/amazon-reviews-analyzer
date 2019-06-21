@@ -6,6 +6,7 @@ import logger from './logger';
 import Model from './model';
 import Preprocessor from './preprocessor';
 import json from './comments.json';
+import Summarizer from './summarizer';
 
 const countStars = (total, review) => total + review.stars;
 const countHelpful = (total, review) => total + review.helpfulFor;
@@ -19,12 +20,13 @@ const computeImportance = (review, totalStars, totalHelpful) => {
   return (starsRatio + helpfulRatio) * customerCoef;
 };
 
+const reviewToText = review => lodash.join([
+  lodash.get(review, 'title', '-'),
+  lodash.get(review, 'text', '-'),
+], ' ');
+
 const computeSentiment = (product, model, preprocessor) => {
   const reviews = lodash.get(product, 'reviews', []);
-  const reviewToText = review => lodash.join([
-    lodash.get(review, 'title', '-'),
-    lodash.get(review, 'text', '-'),
-  ], ' ');
   const totalStars = lodash.reduce(reviews, countStars, 0);
   const totalHelpful = lodash.reduce(reviews, countHelpful, 0);
   return {
@@ -37,7 +39,22 @@ const computeSentiment = (product, model, preprocessor) => {
   };
 };
 
-const printReview = (product, index) => {
+const detectFeatures = (products, summarizer) => {
+  const features = lodash.get(products, 'features', []);
+  const corpus = lodash.flatMap(products, (product) => {
+    const reviews = lodash.get(product, 'reviews', []);
+    return lodash.map(reviews, reviewToText);
+  });
+  const text = lodash.join(corpus, ' ');
+  const summary = summarizer.summarize(text);
+  return lodash.intersection(features, lodash.split(summary, ' '));
+};
+const detectIssues = detectFeatures;
+
+const printFeature = (feature, index) => logger.info(randomColor(`${index + 1}. ${feature}`));
+const printIssue = printFeature;
+
+const printProduct = (product, index) => {
   const info = lodash.join([
     lodash.get(product, 'brand', '-'),
     lodash.get(product, 'sentiment', '-'),
@@ -49,6 +66,7 @@ async function main() {
   const preprocessor = new Preprocessor();
   const products = normalize(json, 'camel');
   const model = new Model();
+  const summarizer = new Summarizer('textrank');
 
   let productsWithSentiment = lodash.map(
     products,
@@ -60,7 +78,19 @@ async function main() {
   }));
   const orderedProducts = lodash.orderBy(productsWithSentiment, ['sentiment'], ['desc']);
   const topProducts = lodash.slice(orderedProducts, 0, 5);
-  lodash.forEach(topProducts, printReview);
+  logger.info('Top products');
+  lodash.forEach(topProducts, printProduct);
+  const tailProducts = lodash.slice(orderedProducts, orderedProducts.length - 5, orderedProducts.length);
+  logger.info('Tail products');
+  lodash.forEach(tailProducts, printProduct);
+
+  const features = detectFeatures(topProducts, summarizer);
+  const issues = detectIssues(tailProducts, summarizer);
+
+  logger.info(chalk.magenta('Features'));
+  lodash.forEach(features, printFeature);
+  logger.info(chalk.magenta('Issues'));
+  lodash.forEach(issues, printIssue);
 }
 
 main();
